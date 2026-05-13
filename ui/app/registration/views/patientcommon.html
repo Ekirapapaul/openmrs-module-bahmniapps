@@ -133,6 +133,21 @@
                 <ng-include src="'views/age.html'"></ng-include>
             </div>
         </section>
+        <!-- PrimeCare: render Phone Number inline immediately below DOB.
+             The attribute is hidden from any patientInformation section in app.json
+             so it doesn't double-render. -->
+        <section class="form-field-inline clearfix" ng-if="::patientConfiguration.getAttributeByName('phoneNumber')">
+            <article class="form-field">
+                <attribute-types target-model="patient"
+                                 attribute="::patientConfiguration.getAttributeByName('phoneNumber')"
+                                 field-validation="::fieldValidation"
+                                 is-auto-complete="isAutoComplete"
+                                 get-auto-complete-list="getAutoCompleteList"
+                                 get-data-results="getDataResults"
+                                 is-read-only="isReadOnly"
+                                 handle-update="handleUpdate"></attribute-types>
+            </article>
+        </section>
         <legend class="registraion_legend" ng-if="::addressLevels.length>0">
             <span class="mylegend"> {{ ::'REGISTRATION_LABEL_ADDRESS_INFO' | translate}}</span>
         </legend>

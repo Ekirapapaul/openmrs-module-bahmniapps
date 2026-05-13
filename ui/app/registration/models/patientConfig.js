@@ -70,6 +70,14 @@ Bahmni.Registration.PatientConfig = (function () {
             })[0];
         },
 
+        // PrimeCare: lookup an attribute by its name (used for inline rendering
+        // of phoneNumber right below DOB on patientcommon.html).
+        getAttributeByName: function (name) {
+            return this.attributeTypes.filter(function (item) {
+                return item.name === name;
+            })[0];
+        },
+
         customAttributeRows: function () {
             return this.attributeRows;
         },
