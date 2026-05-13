@@ -1,0 +1,115 @@
+<section class="block dashboard-section external-lab-panel" style="border:1px solid #ccc; padding:1em; margin-top:1em;">
+    <h2 class="section-title" ng-click="toggle()" style="cursor:pointer;">
+        <i class="fa" ng-class="{'fa-caret-right': collapsed, 'fa-caret-down': !collapsed}"></i>
+        External Lab
+    </h2>
+
+    <div ng-if="!collapsed">
+        <!-- (1) Print Lab Request slip -->
+        <div class="external-lab-section" style="margin-bottom:1.2em;">
+            <h3 style="margin-top:0;">Print lab request slip</h3>
+            <div ng-if="labOrders.length === 0" class="empty">
+                No lab orders in this visit.
+            </div>
+            <ul ng-if="labOrders.length > 0" style="list-style:none; padding-left:0;">
+                <li ng-repeat="o in labOrders">
+                    <label>
+                        <input type="checkbox" ng-model="selectedOrders[o.uuid]"/>
+                        {{o.conceptName}}
+                    </label>
+                </li>
+            </ul>
+            <button ng-click="printRequest()" ng-disabled="printing" class="button confirm">
+                <i class="fa fa-print"></i>
+                <span ng-if="!printing">Print request slip</span>
+                <span ng-if="printing">Generating PDF…</span>
+            </button>
+            <p style="color:#666; font-size:0.85em;">
+                Leave all boxes unticked to include every lab order in this visit.
+            </p>
+        </div>
+
+        <!-- (2) Upload external-lab result -->
+        <div class="external-lab-section" style="margin-bottom:1.2em;">
+            <h3>Upload external-lab document</h3>
+            <p style="color:#666; font-size:0.85em;">
+                Accepted: PDF, PNG, JPEG, TIFF. Max 10 MB per file.
+            </p>
+            <input type="file" multiple
+                   accept="application/pdf,image/png,image/jpeg,image/tiff"
+                   onchange="angular.element(this).scope().onFilesPicked(this.files)"/>
+            <div ng-if="fileError" class="error" style="color:#c00; margin-top:0.4em;">
+                {{fileError}}
+            </div>
+            <div ng-if="selectedFiles.length > 0" style="margin-top:0.4em;">
+                <strong>Files:</strong>
+                <ul style="margin:0.3em 0;">
+                    <li ng-repeat="f in selectedFiles">{{f.name}} ({{(f.size/1024) | number:0}} KB)</li>
+                </ul>
+            </div>
+            <div style="margin-top:0.4em;">
+                <label>Link to order (optional):
+                    <select ng-model="uploadOrderUuid" ng-options="o.uuid as o.conceptName for o in labOrders">
+                        <option value="">— none —</option>
+                    </select>
+                </label>
+            </div>
+            <div style="margin-top:0.4em;">
+                <label>Note (optional):
+                    <input type="text" ng-model="uploadNote" maxlength="500" style="width:60%;"/>
+                </label>
+            </div>
+            <div style="margin-top:0.6em;">
+                <button ng-click="upload()" ng-disabled="uploading || selectedFiles.length === 0"
+                        class="button confirm">
+                    <i class="fa fa-upload"></i>
+                    <span ng-if="!uploading">Upload</span>
+                    <span ng-if="uploading">Uploading {{uploadProgress}}%…</span>
+                </button>
+            </div>
+            <div ng-if="uploading" style="margin-top:0.4em; background:#eee; height:6px;">
+                <div style="background:#37b; height:6px;" ng-style="{width: uploadProgress + '%'}"></div>
+            </div>
+        </div>
+
+        <!-- (3) Numeric-results worksheet -->
+        <div class="external-lab-section">
+            <h3>Numeric results worksheet</h3>
+            <div ng-if="labOrders.length === 0" class="empty">
+                No lab orders in this visit.
+            </div>
+            <table ng-if="labOrders.length > 0" style="border-collapse:collapse; width:100%;">
+                <thead>
+                    <tr>
+                        <th style="border:1px solid #ccc; padding:0.4em;">Test</th>
+                        <th style="border:1px solid #ccc; padding:0.4em;">Value</th>
+                        <th style="border:1px solid #ccc; padding:0.4em;">Unit</th>
+                        <th style="border:1px solid #ccc; padding:0.4em;">Abnormal?</th>
+                        <th style="border:1px solid #ccc; padding:0.4em;">Comment</th>
+                        <th style="border:1px solid #ccc; padding:0.4em;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="o in labOrders" ng-init="resultDraft[o.uuid] = resultDraft[o.uuid] || {}">
+                        <td style="border:1px solid #ccc; padding:0.4em;">{{o.conceptName}}</td>
+                        <td style="border:1px solid #ccc; padding:0.4em;">
+                            <input type="number" step="any" ng-model="resultDraft[o.uuid].numericValue" style="width:7em;"/>
+                        </td>
+                        <td style="border:1px solid #ccc; padding:0.4em;">{{o.units || '-'}}</td>
+                        <td style="border:1px solid #ccc; padding:0.4em; text-align:center;">
+                            <input type="checkbox" ng-model="resultDraft[o.uuid].abnormal"/>
+                        </td>
+                        <td style="border:1px solid #ccc; padding:0.4em;">
+                            <input type="text" ng-model="resultDraft[o.uuid].comment" maxlength="300" style="width:100%;"/>
+                        </td>
+                        <td style="border:1px solid #ccc; padding:0.4em;">
+                            <button ng-click="saveResult(o)" ng-disabled="savingResults" class="button">
+                                Save
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

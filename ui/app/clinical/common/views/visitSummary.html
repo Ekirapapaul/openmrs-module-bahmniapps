@@ -9,6 +9,16 @@
     <ng-include src="'common/views/providerInfo.html'"></ng-include>
 </section>
 
+<!-- PrimeCare external-lab capture (SRS §10.3): print request slip,
+     upload PDF/image, and hand-key numeric results. The panel collapses
+     by default so it doesn't crowd the standard visit-summary layout.
+     TODO(primecare-deployment): if this placement is wrong, the alternative
+     is to mount it inside the `order` switch-case below or in the consultation
+     orders.html view — leaving the directive idempotent so it can be moved. -->
+<section ng-if="!isBeingPrinted && visitUuid && patient">
+    <external-lab-panel visit-uuid="{{::visitUuid}}" patient="patient"></external-lab-panel>
+</section>
+
 <div ng-if="::(!clearBoard)">
     <div ng-repeat="section in visitTabConfig.currentTab.sections">
         <div ng-switch="section.type">
