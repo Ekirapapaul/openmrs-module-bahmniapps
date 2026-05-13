@@ -8,12 +8,21 @@ angular.module('bahmni.clinical')
             var patientParams = {"patientUuid": $scope.patient.uuid, "isEmailPresent": $scope.isEmailPresent};
             var sharePrescriptionToggles = {"prescriptionEmailToggle": $rootScope.prescriptionEmailToggle};
             var printParams = treatmentConfigParams.prescriptionPrint || {};
-            printParams.locationName = $rootScope.facilityLocation.name;
+            // Guard against $rootScope.facilityLocation being undefined (the REST call that
+            // populates it runs asynchronously at clinical app init and can fail silently).
+            // Without this guard the controller throws during construction and the
+            // `event:downloadPrescriptionFromDashboard` listener below is never registered,
+            // which is why the dashboard download icon previously "did nothing".
+            var facilityLocation = $rootScope.facilityLocation || {};
+            printParams.locationName = facilityLocation.name || "";
 
-            const printHeaderAttributes = $rootScope.facilityLocation.attributes.filter(function (attribute) {
-                return attribute.display.includes('Print Header') && !attribute.voided;
+            var facilityAttributes = (facilityLocation && facilityLocation.attributes) || [];
+            var printHeaderAttributes = facilityAttributes.filter(function (attribute) {
+                return attribute && attribute.display && attribute.display.indexOf('Print Header') !== -1 && !attribute.voided;
             });
-            printParams.locationAddress = printHeaderAttributes[0] ? printHeaderAttributes[0].display.split(":")[1].trim() : null;
+            printParams.locationAddress = printHeaderAttributes[0] && printHeaderAttributes[0].display.indexOf(':') !== -1
+                ? printHeaderAttributes[0].display.split(":")[1].trim()
+                : null;
 
             $scope.dashboardConfig = {};
             $scope.expandedViewConfig = {};
