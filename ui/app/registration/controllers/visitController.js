@@ -14,6 +14,7 @@ angular.module('bahmni.registration')
             var visitLocationUuid = $rootScope.visitLocation;
             var redirectToDashboard = false;
             $scope.enableDashboardRedirect = _.some($rootScope.currentUser.privileges, {name: "app:clinical"}) && (appService.getAppDescriptor().getConfigValue("enableDashboardRedirect") || Bahmni.Registration.Constants.enableDashboardRedirect);
+            $scope.summaryColumns = appService.getAppDescriptor().getConfigValue("summaryColumns") || 3;
 
             var getPatient = function () {
                 var deferred = $q.defer();

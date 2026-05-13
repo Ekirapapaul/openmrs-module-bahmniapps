@@ -580,5 +580,157 @@
         
         <!-- Marked -->
         <script src="../components/marked/marked.min.js"></script>
+<!-- PrimeCare: provider dropdown for Assigned Doctor obs (SRS 8.1).
+     Runs on every visit-page render. Watches the DOM for the Assigned
+     Doctor text input (rendered by Forms 2.0) and prepends a <select>
+     populated from /openmrs/ws/rest/v1/provider. The selected provider's
+     UUID is written back to the input via the React setter so the form
+     state picks it up. -->
+<script>
+(function () {
+    if (window.__pcDoctorDropdownSetup) return;
+    window.__pcDoctorDropdownSetup = true;
+    console.log('[PrimeCare] provider-dropdown script attached');
+
+    // Fetch providers with attributes (?v=full) and filter to those tagged
+    // practitioner_type = Doctor. Customize the predicate below if you want a
+    // wider set (e.g. include 'Cardiologist' or other practitioner types).
+    var providersPromise = fetch('/openmrs/ws/rest/v1/provider?v=full&limit=200', { credentials: 'include' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            var all = d.results || [];
+            var doctors = all.filter(function (p) {
+                var attrs = p.attributes || [];
+                for (var i = 0; i < attrs.length; i++) {
+                    var a = attrs[i];
+                    var typeName = a.attributeType && (a.attributeType.display || a.attributeType.name);
+                    if (typeName !== 'practitioner_type') continue;
+                    var val = a.value;
+                    if (typeof val === 'string' && val === 'Doctor') return true;
+                    if (val && (val.display === 'Doctor' || val === 'Doctor')) return true;
+                }
+                return false;
+            });
+            console.log('[PrimeCare] providers fetched:', all.length, '— filtered to practitioner_type=Doctor:', doctors.length);
+            return doctors;
+        })
+        .catch(function (e) { console.error('[PrimeCare] provider fetch failed:', e); return []; });
+
+    // Bahmni Forms 2.0 Text obsControl renders as <textarea> via its TextBox component,
+    // not <input type="text">. We target both, and any form control.
+    var FIELD_SELECTOR = 'textarea:not([data-pc-attached]), input:not([data-pc-attached]):not([type="hidden"])';
+
+    function findInputForLabel (labelText) {
+        var allNodes = document.querySelectorAll('*');
+        var hits = [];
+        for (var i = 0; i < allNodes.length; i++) {
+            var el = allNodes[i];
+            if (el.children.length > 0) continue;
+            var t = (el.textContent || '').trim();
+            if (t === labelText) hits.push(el);
+        }
+        for (var h = 0; h < hits.length; h++) {
+            var anc = hits[h];
+            for (var k = 0; k < 10 && anc; k++) {
+                var input = anc.querySelector && anc.querySelector(FIELD_SELECTOR);
+                if (input) {
+                    console.log('[PrimeCare] match for "' + labelText + '" -> <' + input.tagName.toLowerCase() + '> via ancestor depth', k, anc.className || anc.tagName);
+                    return input;
+                }
+                anc = anc.parentElement;
+            }
+        }
+        if (hits.length > 0) {
+            if (!window.__pcLastDiag || Date.now() - window.__pcLastDiag > 2000) {
+                window.__pcLastDiag = Date.now();
+                // Found the label but no form element nearby — dump siblings of label so we can see what is there
+                var anc2 = hits[0].parentElement;
+                var snapshot = anc2 ? anc2.outerHTML.replace(/\s+/g, ' ').slice(0, 800) : '(no parent)';
+                console.log('[PrimeCare] label "' + labelText + '" found; no nearby form control. surrounding HTML:', snapshot);
+            }
+        }
+        return null;
+    }
+
+    function setNativeFieldValue (field, value) {
+        // Works for both <input> and <textarea>; React tracks via prototype setter.
+        var proto = field.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+        var setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+        setter.call(field, value);
+        field.dispatchEvent(new Event('input',  { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    var ASSIGNED_DOCTOR_CONCEPT_UUID = '96300525-20b4-48bc-8cd2-a016ad0719e1';
+
+    // Pre-populate from the latest Assigned Doctor obs for this patient. Used on the
+    // Vitals/clinical pages where a NEW encounter is being authored but the patient
+    // was already assigned at registration.
+    function fetchLatestAssignment (patientUuid) {
+        if (!patientUuid) return Promise.resolve(null);
+        return fetch('/openmrs/ws/rest/v1/obs?patient=' + encodeURIComponent(patientUuid)
+                     + '&concept=' + ASSIGNED_DOCTOR_CONCEPT_UUID
+                     + '&v=default&limit=1', { credentials: 'include' })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                var obs = d.results && d.results[0];
+                return obs && obs.value ? obs.value : null;
+            })
+            .catch(function () { return null; });
+    }
+
+    function currentPatientUuid () {
+        var m = location.hash.match(/patient\/([0-9a-f-]{36})/i);
+        return m ? m[1] : null;
+    }
+
+    function tryAttach () {
+        var field = findInputForLabel('Assigned Doctor');
+        if (!field) return;
+        field.setAttribute('data-pc-attached', '1');
+        console.log('[PrimeCare] attaching dropdown next to', field.tagName.toLowerCase());
+        var prePopulate = field.value
+            ? Promise.resolve(null)
+            : fetchLatestAssignment(currentPatientUuid());
+        Promise.all([providersPromise, prePopulate]).then(function (results) {
+            var providers = results[0];
+            var prevUuid = results[1];
+            if (prevUuid && !field.value) {
+                setNativeFieldValue(field, prevUuid);
+                console.log('[PrimeCare] pre-populated Assigned Doctor from prior obs:', prevUuid);
+            }
+            var sel = document.createElement('select');
+            sel.style.minWidth = '14em';
+            sel.style.marginRight = '0.5em';
+            var html = '<option value="">-- Select doctor --</option>';
+            for (var j = 0; j < providers.length; j++) {
+                var p = providers[j];
+                html += '<option value="' + p.uuid + '">' + (p.display || p.identifier || p.uuid) + '</option>';
+            }
+            sel.innerHTML = html;
+            sel.value = field.value || '';
+            sel.addEventListener('change', function () {
+                setNativeFieldValue(field, sel.value);
+            });
+            field.parentElement.insertBefore(sel, field);
+            // Hide the underlying textarea — it stores the provider UUID but the
+            // staff only need to see the human-friendly name in the <select>.
+            field.style.display = 'none';
+        });
+    }
+
+    function start () {
+        tryAttach();
+        var observer = new MutationObserver(function () { tryAttach(); });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+})();
+</script>
     </body>
 </html>
