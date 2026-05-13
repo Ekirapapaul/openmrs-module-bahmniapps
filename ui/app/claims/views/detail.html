@@ -1,0 +1,112 @@
+<div class="claim-detail">
+    <div ng-if="loading">Loading claim…</div>
+    <div ng-if="error" class="error">{{error}}</div>
+
+    <div ng-if="!loading && !error && claim">
+        <h2>Claim {{claim.externalRef}}</h2>
+
+        <dl style="display:grid; grid-template-columns:max-content 1fr; gap:0.2em 1em;">
+            <dt>Status</dt><dd>{{claim.status}}<span ng-if="claim.statusReason"> — {{claim.statusReason}}</span></dd>
+            <dt>Insurer</dt><dd>{{claim.insurer}}<span ng-if="claim.schemeCode"> / {{claim.schemeCode}}</span></dd>
+            <dt>Member</dt><dd>{{claim.memberNumber || '-'}}</dd>
+            <dt>Payment mode</dt><dd>{{claim.paymentMode}}</dd>
+            <dt>Patient UUID</dt><dd><code>{{claim.patientUuid}}</code></dd>
+            <dt>Visit UUID</dt><dd><code>{{claim.visitUuid}}</code></dd>
+            <dt>Total / Approved / Paid</dt>
+            <dd>{{claim.totalAmount}} / {{claim.approvedAmount || '-'}} / {{claim.paidAmount || '-'}} {{claim.currency}}</dd>
+            <dt>Submitted</dt><dd>{{claim.submittedAt ? (claim.submittedAt | date:'yyyy-MM-dd HH:mm') : '-'}}</dd>
+            <dt>Decided</dt><dd>{{claim.decidedAt ? (claim.decidedAt | date:'yyyy-MM-dd HH:mm') : '-'}}</dd>
+            <dt>Paid at</dt><dd>{{claim.paidAt ? (claim.paidAt | date:'yyyy-MM-dd HH:mm') : '-'}}</dd>
+            <dt>Insurer claim ID</dt><dd>{{claim.insurerClaimId || '-'}}</dd>
+        </dl>
+
+        <h3 style="margin-top:1.5em;">Lines ({{claim.lines.length}})</h3>
+        <table style="border-collapse:collapse; width:100%;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Type</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Service</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Qty</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Unit</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Total</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Approved</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Denial reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="l in claim.lines">
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{l.lineType}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{l.serviceName}} <small>({{l.serviceCode}})</small></td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{l.quantity}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{l.unitPrice}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{l.totalAmount}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{l.approvedAmount || '-'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{l.denialReason || '-'}}</td>
+                </tr>
+                <tr ng-if="claim.lines.length === 0">
+                    <td colspan="7" style="border:1px solid #ccc; padding:0.4em; text-align:center;">No lines recorded.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:1.5em;">Submission history (last 10)</h3>
+        <table style="border-collapse:collapse; width:100%;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #ccc; padding:0.4em;">When</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Direction</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Insurer</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Attempt</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">HTTP</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">OK</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="s in claim.submissions">
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{s.createdAt | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{s.direction}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{s.insurer}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{s.attempt}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{s.responseStatus || '-'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{s.success ? '✓' : '✗'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{s.errorMessage || s.errorCode || '-'}}</td>
+                </tr>
+                <tr ng-if="claim.submissions.length === 0">
+                    <td colspan="7" style="border:1px solid #ccc; padding:0.4em; text-align:center;">No submissions recorded.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:1.5em;">Remittances ({{claim.remittances.length}})</h3>
+        <table style="border-collapse:collapse; width:100%;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Paid at</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Ref</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Amount</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Deduction</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Bank ref</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Reconciled</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="r in claim.remittances">
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{r.paidAt | date:'yyyy-MM-dd'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{r.remittanceRef || '-'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{r.paidAmount}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em; text-align:right;">{{r.deductionAmount}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{r.bankRef || '-'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{r.reconciled ? '✓' : '✗'}}</td>
+                </tr>
+                <tr ng-if="claim.remittances.length === 0">
+                    <td colspan="6" style="border:1px solid #ccc; padding:0.4em; text-align:center;">No remittances received yet.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:1.5em;">
+            <button class="button" ng-click="back()">← Back to list</button>
+        </p>
+    </div>
+</div>

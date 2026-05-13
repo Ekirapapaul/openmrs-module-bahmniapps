@@ -1,0 +1,82 @@
+<div class="dashboard claims-dashboard">
+    <div ng-if="loading" class="loading">Loading claims summary…</div>
+    <div ng-if="error" class="error">{{error}}</div>
+
+    <div ng-if="!loading && !error" class="content">
+        <h2>Claims Officer Dashboard</h2>
+
+        <div class="cards" style="display:flex; flex-wrap:wrap; gap:1em;">
+            <a class="card" ng-click="goTo('DRAFT')" style="cursor:pointer; padding:1em; border:1px solid #ccc; min-width:140px;">
+                <div class="card-label">Drafts</div>
+                <div class="card-value" style="font-size:1.5em;">{{cards.drafts}}</div>
+            </a>
+            <a class="card" ng-click="goTo('SUBMITTED')" style="cursor:pointer; padding:1em; border:1px solid #ccc; min-width:140px;">
+                <div class="card-label">Submitted / In review</div>
+                <div class="card-value" style="font-size:1.5em;">{{cards.submitted}}</div>
+            </a>
+            <a class="card" ng-click="goTo('APPROVED')" style="cursor:pointer; padding:1em; border:1px solid #ccc; min-width:140px;">
+                <div class="card-label">Approved</div>
+                <div class="card-value" style="font-size:1.5em;">{{cards.approved}}</div>
+            </a>
+            <a class="card" ng-click="goTo('DENIED')" style="cursor:pointer; padding:1em; border:1px solid #ccc; min-width:140px;">
+                <div class="card-label">Denied</div>
+                <div class="card-value" style="font-size:1.5em;">{{cards.denied}}</div>
+            </a>
+            <a class="card" ng-click="goTo('PAID')" style="cursor:pointer; padding:1em; border:1px solid #ccc; min-width:140px;">
+                <div class="card-label">Paid</div>
+                <div class="card-value" style="font-size:1.5em;">{{cards.paid}}</div>
+            </a>
+            <a class="card" ng-click="goTo('APPEAL_PENDING')" style="cursor:pointer; padding:1em; border:1px solid #ccc; min-width:140px;">
+                <div class="card-label">Appeal pending</div>
+                <div class="card-value" style="font-size:1.5em;">{{cards.appealPending}}</div>
+            </a>
+        </div>
+
+        <h3 style="margin-top:1.5em;">Ageing (days since submission)</h3>
+        <table style="border-collapse:collapse;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #ccc; padding:0.4em 1em;">0-30</th>
+                    <th style="border:1px solid #ccc; padding:0.4em 1em;">31-60</th>
+                    <th style="border:1px solid #ccc; padding:0.4em 1em;">61-90</th>
+                    <th style="border:1px solid #ccc; padding:0.4em 1em;">90+</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border:1px solid #ccc; padding:0.4em 1em; text-align:center;">{{ageing['0-30']}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em 1em; text-align:center;">{{ageing['31-60']}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em 1em; text-align:center;">{{ageing['61-90']}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em 1em; text-align:center;">{{ageing['90+']}}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="margin-top:1.5em;">Recent denials (appeal window — 30 days)</h3>
+        <div ng-if="appeals.length === 0" class="empty">No denied claims in the last 30 days.</div>
+        <table ng-if="appeals.length > 0" style="border-collapse:collapse; width:100%;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Ref</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Insurer</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Member</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Decided</th>
+                    <th style="border:1px solid #ccc; padding:0.4em;">Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="a in appeals" ng-click="openAppeal(a.id)" style="cursor:pointer;">
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{a.externalRef}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{a.insurer}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{a.memberNumber || '-'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{a.decidedAt | date:'yyyy-MM-dd'}}</td>
+                    <td style="border:1px solid #ccc; padding:0.4em;">{{a.statusReason || '-'}}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:1.5em;">
+            <a ui-sref="claims.list" class="button">Browse all claims →</a>
+        </p>
+    </div>
+</div>
