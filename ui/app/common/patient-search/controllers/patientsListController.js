@@ -261,24 +261,29 @@ angular.module('bahmni.common.patientSearch')
                 return;
             }
             var searchType = $scope.search.searchTypes[index];
-            if (searchType.handler) {
-                var params = {
-                    q: searchType.handler,
-                    v: "full",
-                    location_uuid: $bahmniCookieStore.get(Bahmni.Common.Constants.locationCookieName).uuid,
-                    provider_uuid: $rootScope.currentProvider.uuid
-                };
-                if (searchType.additionalParams) {
-                    params["additionalParams"] = searchType.additionalParams;
-                }
-                patientService.findPatients(params).then(function (response) {
-                    searchType.patientCount = response.data.length;
-                    if ($scope.search.isSelectedSearch(searchType)) {
-                        $scope.search.updatePatientList(response.data);
-                    }
-                    return getPatientCountSeriallyBySearchIndex(index + 1);
-                });
+            // PrimeCare: skip search types that have no handler OR are the currently-selected tab.
+            // The $watch('search.searchType') below already fires fetchPatients for the active
+            // tab; fetching it here as well doubles the load and hammers MySQL on every page hit
+            // (parallel branch had this guard, serial branch did not — parity fix).
+            if (!searchType.handler || $scope.search.searchType === searchType) {
+                return getPatientCountSeriallyBySearchIndex(index + 1);
             }
+            var params = {
+                q: searchType.handler,
+                v: "full",
+                location_uuid: $bahmniCookieStore.get(Bahmni.Common.Constants.locationCookieName).uuid,
+                provider_uuid: $rootScope.currentProvider.uuid
+            };
+            if (searchType.additionalParams) {
+                params["additionalParams"] = searchType.additionalParams;
+            }
+            patientService.findPatients(params).then(function (response) {
+                searchType.patientCount = response.data.length;
+                if ($scope.search.isSelectedSearch(searchType)) {
+                    $scope.search.updatePatientList(response.data);
+                }
+                return getPatientCountSeriallyBySearchIndex(index + 1);
+            });
         };
         initialize();
     }

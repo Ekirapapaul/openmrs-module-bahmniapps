@@ -208,6 +208,21 @@ describe("PatientsListController", function () {
                 expect(_.each).not.toHaveBeenCalled();
             });
 
+            it('should skip the active search type in the serial fetch loop (PrimeCare: no double-fetch)', function () {
+                // The Search model constructor sets searchType = searchTypes[0], so the first
+                // handler-bearing extension (activePatients) is the active tab on init. The
+                // serial loop must skip it — the $watch on search.searchType fetches the active
+                // tab once. Pre-fix, both fired → MySQL got hammered with N+1 queries on each
+                // clinical page load.
+                getAppDescriptor.getConfigValue.and.returnValue({"serializeSearch": true});
+                scope.$apply(setUp);
+
+                expect(_patientService.findPatients).toHaveBeenCalledTimes(1);
+                var calledHandler = _patientService.findPatients.calls.argsFor(0)[0].q;
+                expect(calledHandler).toBe('emrapi.sqlSearch.patientsToAdmit');
+                expect(calledHandler).not.toBe('emrapi.sqlSearch.activePatients');
+            });
+
             it('should call function returned from debounce when debounceSearch is true', function () {
                 getAppDescriptor.getConfigValue.and.returnValue({
                     "debounceSearch": true,
