@@ -20,9 +20,17 @@ Bahmni.Common.Domain.Diagnosis = function (codedAnswer, order, certainty, existi
     self.getDisplayName = function () {
         if (self.freeTextAnswer) {
             return self.freeTextAnswer;
-        } else {
-            return self.codedAnswer.shortName || self.codedAnswer.name;
         }
+        // PrimeCare: append ICD-10 code when present so diagnosis chips and
+        // past-diagnosis rows read "Hypertension — I10". The code is stashed
+        // on codedAnswer by the autocomplete mapping (diagnosisController.mapConcept)
+        // at selection time; legacy diagnoses loaded without a code degrade
+        // to plain name.
+        var base = self.codedAnswer.shortName || self.codedAnswer.name;
+        if (base && self.codedAnswer.code) {
+            return base + " — " + self.codedAnswer.code;
+        }
+        return base;
     };
 
     self.isPrimary = function () {

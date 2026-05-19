@@ -185,6 +185,18 @@ angular.module('consultation')
                     }
                 }
             })
+            .state('patient.dashboard.show.allergies', {
+                url: '/allergies',
+                params: {
+                    cachebuster: null
+                },
+                views: {
+                    'consultation-content': {
+                        templateUrl: 'consultation/views/allergies.html',
+                        controller: 'AllergiesConsultationController'
+                    }
+                }
+            })
             .state('patient.dashboard.show.treatment', {
                 abstract: true,
                 params: {

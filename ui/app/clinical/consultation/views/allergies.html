@@ -1,0 +1,16 @@
+<!--
+    Consultation board "Allergies" tab (PrimeCare clinical-workflow ask).
+    Mounts the same React micro-frontend used by the patient dashboard's
+    Allergies section — full add/edit/list with severity and reactions,
+    writing through to Patient.Allergy via FHIR. Lets nurses manage
+    allergies from the triage / consultation screen without leaving the
+    clinical app.
+-->
+<div class="consultation-content allergies-consultation-tab"
+     style="padding: 14px 18px;">
+    <mfe-next-ui-patient-alergies-control
+            ng-if="allergyData && allergyData.patient"
+            host-data="allergyData"
+            app-service="appService">
+    </mfe-next-ui-patient-alergies-control>
+</div>

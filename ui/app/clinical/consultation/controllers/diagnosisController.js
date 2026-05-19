@@ -337,20 +337,25 @@ angular.module('bahmni.clinical')
                         concept: {
                             name: concept.conceptName,
                             uuid: concept.conceptUuid,
-                            conceptSystem: concept.conceptSystem
+                            conceptSystem: concept.conceptSystem,
+                            code: concept.code
                         },
                         lookup: {
                             name: concept.matchedName || concept.conceptName,
                             uuid: concept.conceptUuid,
-                            conceptSystem: concept.conceptSystem
+                            conceptSystem: concept.conceptSystem,
+                            code: concept.code
                         }
                     };
 
                     if (concept.matchedName && concept.matchedName !== concept.conceptName) {
                         response.value = response.value + " => " + concept.conceptName;
                     }
+                    // PrimeCare: show ICD-10 code in autocomplete and on the saved chip.
+                    // Format: "Hypertension — I10" (em-dash, code last). Falls back to plain
+                    // name when no code is on the concept.
                     if (concept.code) {
-                        response.value = response.value + " (" + concept.code + ")";
+                        response.value = response.value + " — " + concept.code;
                     }
                     return response;
                 });
