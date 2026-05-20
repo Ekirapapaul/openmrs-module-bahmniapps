@@ -4,6 +4,25 @@ angular.module('bahmni.clinical')
     .directive('patientContext', ['$state', '$translate', '$sce', 'patientService', 'spinner', 'appService', function ($state, $translate, $sce, patientService, spinner, appService) {
         var controller = function ($scope, $rootScope) {
             var patientContextConfig = appService.getAppDescriptor().getConfigValue('patientContext') || {};
+
+            // PrimeCare F-30: "Statement" button URL points at the Odoo
+            // controller that resolves res.partner by OpenMRS uuid and
+            // streams the QWeb-rendered PDF inline.
+            //
+            // Base host is configurable via app.json's primecareOdooUrl
+            // (default: same host as the page, port 8069). Hide the
+            // button entirely by setting primecareOdooUrl="" — useful
+            // for sites that don't have Odoo deployed yet.
+            var odooBase = appService.getAppDescriptor().getConfigValue('primecareOdooUrl');
+            if (odooBase === undefined || odooBase === null) {
+                odooBase = window.location.protocol + '//' + window.location.hostname + ':8069';
+            }
+            if (odooBase && $scope.patient && $scope.patient.uuid) {
+                $scope.pcStatementUrl = odooBase.replace(/\/+$/, '') +
+                    '/primecare/statement/' + encodeURIComponent($scope.patient.uuid);
+            } else {
+                $scope.pcStatementUrl = null;
+            }
             $scope.initPromise = patientService.getPatientContext($scope.patient.uuid, $state.params.enrollment, patientContextConfig.personAttributes, patientContextConfig.programAttributes, patientContextConfig.additionalPatientIdentifiers);
             $scope.allowNavigation = angular.isDefined($scope.isConsultation);
             $scope.initPromise.then(function (response) {

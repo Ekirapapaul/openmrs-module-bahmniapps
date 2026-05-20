@@ -24,6 +24,19 @@
             <li ng-repeat="(key, value) in patientContext.programAttributes">
                 {{::value.description |translate}}: {{value.value}}
             </li>
+            <li class="pc-statement-btn-wrap" ng-if="pcStatementUrl" style="margin-left:auto; padding-right:8px;">
+                <a class="pc-statement-btn"
+                   ng-href="{{pcStatementUrl}}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   title="{{'STATEMENT_BTN_TOOLTIP' | translate}}"
+                   style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px;
+                          background:#1f6f8b; color:#fff; border-radius:4px; text-decoration:none;
+                          font-size:13px; font-weight:500;">
+                    <i class="fa fa-file-text-o"></i>
+                    <span class="pc-statement-btn-label">{{'STATEMENT_BTN_LABEL' | translate}}</span>
+                </a>
+            </li>
         </ul>
         <div class="patient-info hidden-tablet-above">
             <button type="button" class="prev-page" history-back ng-if="!allowNavigation">
