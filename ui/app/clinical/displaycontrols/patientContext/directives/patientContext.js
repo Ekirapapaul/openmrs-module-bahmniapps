@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('bahmni.clinical')
-    .directive('patientContext', ['$state', '$translate', '$sce', 'patientService', 'spinner', 'appService', function ($state, $translate, $sce, patientService, spinner, appService) {
+    .directive('patientContext', ['$state', '$translate', '$sce', '$http', 'patientService', 'spinner', 'appService', function ($state, $translate, $sce, $http, patientService, spinner, appService) {
         var controller = function ($scope, $rootScope) {
             var patientContextConfig = appService.getAppDescriptor().getConfigValue('patientContext') || {};
 
@@ -23,6 +23,30 @@ angular.module('bahmni.clinical')
             } else {
                 $scope.pcStatementUrl = null;
             }
+
+            // PrimeCare emergency banner: ask the OMOD for the active
+            // visit's emergency-flag status. Re-checks every 60s while
+            // the directive is mounted so a triage nurse raising the
+            // flag in another tab shows up here promptly.
+            $scope.pcEmergency = false;
+            $scope.pcEmergencyAsOf = null;
+            function refreshEmergencyStatus () {
+                var visitUuid = $state.params && $state.params.visitUuid;
+                if (!visitUuid && $scope.visitHistory && $scope.visitHistory.activeVisit) {
+                    visitUuid = $scope.visitHistory.activeVisit.uuid;
+                }
+                if (!visitUuid) { return; }
+                $http.get('/openmrs/ws/rest/v1/primecare/visit/' + visitUuid + '/emergency-status',
+                          { timeout: 4000, withCredentials: true })
+                    .then(function (resp) {
+                        $scope.pcEmergency = !!(resp.data && resp.data.emergency);
+                        $scope.pcEmergencyAsOf = resp.data && resp.data.asOf;
+                    }, function () { /* silent — banner just doesn't show */ });
+            }
+            refreshEmergencyStatus();
+            var pcEmergencyTimer = setInterval(refreshEmergencyStatus, 60000);
+            $scope.$on('$destroy', function () { clearInterval(pcEmergencyTimer); });
+
             $scope.initPromise = patientService.getPatientContext($scope.patient.uuid, $state.params.enrollment, patientContextConfig.personAttributes, patientContextConfig.programAttributes, patientContextConfig.additionalPatientIdentifiers);
             $scope.allowNavigation = angular.isDefined($scope.isConsultation);
             $scope.initPromise.then(function (response) {

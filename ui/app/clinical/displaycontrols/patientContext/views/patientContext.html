@@ -1,4 +1,18 @@
 <div class="patient-info-fixed-postion-container" id="patientContext">
+    <!-- PrimeCare emergency banner: paints when the current visit has
+         PrimeCare Emergency Flag = Yes. Driven by EmergencyStatusService
+         polled by the directive on patient/visit change. -->
+    <div ng-if="pcEmergency"
+         style="background:#d33; color:#fff; font-weight:700; letter-spacing:0.5px;
+                font-size:13px; padding:6px 14px; text-align:center;
+                border-bottom:2px solid #a01818; animation: pcEmergencyPulse 2s ease-in-out infinite;">
+        <i class="fa fa-exclamation-triangle" style="margin-right:8px;"></i>
+        EMERGENCY — this patient has been flagged on the current visit.
+        <span ng-if="pcEmergencyAsOf" style="font-weight:500; font-size:12px; opacity:0.9; margin-left:10px;">
+            (since <span>{{pcEmergencyAsOf | date:'short'}}</span>)
+        </span>
+    </div>
+    <style>@keyframes pcEmergencyPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.85; } }</style>
     <div class="patient-info-fixed">
         <ul class="hidden-mobile">
             <li class="patient-name-image-container">
